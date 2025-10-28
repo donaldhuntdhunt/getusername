@@ -5,18 +5,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ======================
-// Fungsi umum ambil username (pakai Chrome AWS Lambda)
+// Fungsi umum ambil username
 // ======================
 async function getUsername(url, selectorFunc) {
+  const executablePath = await chromium.executablePath;
+
   const browser = await chromium.puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath,
-    headless: true,
+    executablePath,
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: "domcontentloaded" });
+
   const username = await page.evaluate(selectorFunc);
   await browser.close();
   return username;
@@ -86,4 +89,3 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
