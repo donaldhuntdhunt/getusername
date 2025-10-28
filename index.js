@@ -1,14 +1,20 @@
 import express from "express";
-import puppeteer from "puppeteer";
+import chromium from "chrome-aws-lambda";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ======================
+// Fungsi umum ambil username (pakai Chrome AWS Lambda)
+// ======================
 async function getUsername(url, selectorFunc) {
-  const browser = await puppeteer.launch({
+  const browser = await chromium.puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
+
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: "domcontentloaded" });
   const username = await page.evaluate(selectorFunc);
@@ -16,10 +22,13 @@ async function getUsername(url, selectorFunc) {
   return username;
 }
 
-// TIKTOK
+// ======================
+// TikTok
+// ======================
 app.get("/tiktok", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.json({ error: "Tambahkan ?url=" });
+
   try {
     const username = await getUsername(url, () => {
       const meta = document.querySelector('meta[property="og:title"]');
@@ -31,10 +40,13 @@ app.get("/tiktok", async (req, res) => {
   }
 });
 
-// INSTAGRAM
+// ======================
+// Instagram
+// ======================
 app.get("/instagram", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.json({ error: "Tambahkan ?url=" });
+
   try {
     const username = await getUsername(url, () => {
       const meta = document.querySelector('meta[property="og:title"]');
@@ -46,10 +58,13 @@ app.get("/instagram", async (req, res) => {
   }
 });
 
-// FACEBOOK
+// ======================
+// Facebook
+// ======================
 app.get("/facebook", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.json({ error: "Tambahkan ?url=" });
+
   try {
     const username = await getUsername(url, () => {
       const title = document.title || "";
@@ -62,7 +77,7 @@ app.get("/facebook", async (req, res) => {
   }
 });
 
-// Root info
+// ======================
 app.get("/", (req, res) => {
   res.json({
     info: "Gunakan endpoint /tiktok, /instagram, /facebook dengan parameter ?url=",
@@ -71,3 +86,4 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
